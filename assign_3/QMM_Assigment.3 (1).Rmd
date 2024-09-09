@@ -1,0 +1,100 @@
+---
+title: "QMM_Assignment3"
+author: "Dilip Kumar"
+date: "2023-10-16"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+
+#Loading the package
+
+```{r}
+library(Matrix,warn.conflicts = FALSE)
+library(lpSolve,warn.conflicts = FALSE)
+```
+  
+#constructing the problem's matrix
+
+```{r}
+trans_matrix <- matrix(c(22,14,30,600,100,
+                        16,20,24,625,120,
+                        80,60,70,"-","210/220"),ncol=5,nrow=3,byrow = TRUE)
+colnames(trans_matrix) <- c("Warehouse1","Warehouse2","Warehouse3",
+                           "Production Cost","Production Capacity")
+rownames(trans_matrix) <- c("PlantA","PlantB","Monthly Demand")
+trans_matrix <- as.table(trans_matrix)
+trans_matrix
+```
+***
+```{r}
+new.trans_matrix <- matrix(c(622,614,630,0,100,
+                            641,645,649,0,120,
+                            80,60,70,10,220),ncol=5,nrow=3,byrow=TRUE)
+
+colnames(new.trans_matrix) <- c("Warehouse1","Warehouse2","Warehouse3",
+                               "Dummy","Production Capacity")
+rownames(new.trans_matrix) <- c("PlantA","PlantB","Monthly Demand")
+trans_matrix <- as.table(new.trans_matrix)
+trans_matrix
+
+```
+
+***
+#The cost Matrix which I have created is shown below:
+
+```{r}
+costs<-matrix(c(622,614,630,0,
+                641,645,649,0),nrow = 2, byrow = TRUE)
+costs
+```
+#On the Production Capacity side of the matrix, the following values are present:
+ 
+```{r}
+row.rhs<-c(100,120)
+row.signs<-rep("<=",2)
+```
+
+#The matrix's values on the Production Capacity side of the row are as follows:
+#To identify the dummy variable in this case, we used the double variable 10 at the end as well as the values from the matrix's column side. The following production capacities exist:
+
+```{r}
+col.rhs<-c(80,60,70,10)
+col.signs<-rep(">=",4)
+```
+
+#In this chunk, we are going to use the LP Transport Command to run the code
+```{r}
+lptrans<-lp.transport(costs,"min",row.signs,row.rhs,col.signs,col.rhs )
+lptrans$solution
+lptrans$objval
+```
+
+***
+SUMMARY: 
+
+Minimize is the objective function: TC=622x11+614x12+630x13+641x21+645x22+649x23
+                               
+Subject to Constraints:
+
+[Supply]:x11+x12+x13>=100, x21+x22+x23>=120
+[Demand]:x11+x21>=80, x12+x22>=60, x13+x23>=70
+        
+Subject to Non-Negativity Constraints: xij=0,where i=1,2 and j=1,2,3            
+
+CONCLUSION:
+
+Based on the code above, we may deduce that the answer is Z=132790.
+The matrix's values on the Production Capacity side of the row are as follows:
+
+Following are the results for each variable in the two plants:
+
+The fourth variable, 10x24, is referred to as the "throw away variable" 
+And represents the warehouse 2 from plant A (60x12), 
+the warehouse 3 from plant A (40x13),
+and the warehouse 1 from plant B (80x21).
+
+***
+    
