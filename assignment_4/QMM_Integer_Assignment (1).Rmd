@@ -1,0 +1,152 @@
+---
+title: "QMM_Integer_Assignment"
+author: "Dilip Kumar"
+date: "2023-11-20"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(lpSolve)
+
+# Creating a matrix for days and required workers
+DAY_AND_WORKERS<- matrix(c("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday",18,27,22,26,25,21,19),ncol = 2, byrow = F) 
+colnames(DAY_AND_WORKERS) = c("Day","Workers_Required")
+
+# Converting to a table for display
+as.table(DAY_AND_WORKERS)
+```
+
+
+
+
+
+Package handlers at AP are guaranteed a five-day work week with two consecutive days off. The
+base wage for the handlers is $750 per week. Workers working on Saturday or Sunday receive an
+additional $25 per day. The possible shifts and salaries for package handlers are:
+
+```{r}
+
+# Making a table for shifts, days off, and wages
+Shift_DaysOff_Wage <- matrix(c(1,2,3,4,5,6,7,"Sunday and Monday","Monday and Tuesday","Tuesday and Wednesday","Wednesday and Thursday","Thursday and Friday","Friday and Saturday","Saturday and Sunday","$775","$800","$800","$800","$800","$775","$750"), ncol = 3, byrow = F)
+
+# Adding column names
+colnames(Shift_DaysOff_Wage) <- c("Shift", "Days_Off", "Wage")
+
+# Converting to a table for display
+as.table(Shift_DaysOff_Wage)
+
+
+```
+
+
+Question:
+The manager wants to keep the total wage expenses as low as possible while ensuring that there
+are sufficient number of workers available each day. Formulate and solve the problem. What was
+the total cost? How many workers are available each day?
+
+Solution:
+##Formulate and solve LP problem
+
+
+#Objective Function:
+We aim to minimize the total cost, which is represented by the objective function:
+
+Z = 775X_1 + 800X_2 + 800X_3 + 800X_4 + 800X_5 + 775X_6 + 750X_7
+
+Where:
+(X1, X2, X3, X4, X5, X6, X7) are the number of workers under specific shift schedules with corresponding salaries.
+
+#Constraints:
+We have several constraints to ensure there are sufficient workers available each day:
+
+1. Availability on Sunday:    0X_1 + 1X_2 + 1X_3 + 1X_4 + 1X_5 + 1X_6 + 0X_7 
+
+2. Availability on Monday:    0X_1 + 0X_2 + 1X_3 + 1X_4 + 1X_5 + 1X_6 + 1X_7 
+
+3. Availability on Tuesday:   1X_1 + 0X_2 + 0X_3 + 1X_4 + 1X_5 + 1X_6 + 1X_7 
+
+4. Availability on Wednesday: 1X_1 + 1X_2 + 0X_3 + 0X_4 + 1X_5 + 1X_6 + 1X_7 
+
+5. Availability on Thursday:  1X_1 + 1X_2 + 1X_3 + 0X_4 + 0X_5 + 1X_6 + 1X_7 
+
+6. Availability on Friday:    1X_1 + 1X_2 + 1X_3 + 1X_4 + 0X_5 + 0X_6 + 1X_7 
+
+7. Availability on Saturday:  1X_1 + 1X_2 + 1X_3 + 1X_4 + 1X_5 + 0X_6 + 0X_7
+
+#Non-Negative Constraints:
+To ensure a realistic solution, we have non-negative constraints for each variable: [ X_{1:7} ]
+
+These constraints collectively represent the optimization problem you are solving—minimizing the total cost while meeting the daily worker availability requirements.
+
+
+
+
+Let's solve the problem using "R", and by using above mentioned library "lpsolve".
+Since, this problem needs to be solved by integer programming, we need to use the function int.vec, which says that all the variables should be of integers and not fractions.
+
+```{r}
+
+# Define the objective function coefficients
+obj.f <- c(775, 800, 800, 800, 800, 775, 750)
+
+# Defining the constraints matrix
+const <- matrix(c(0, 1, 1, 1, 1, 1, 0,
+                 0, 0, 1, 1, 1, 1, 1,
+                 1, 0, 0, 1, 1, 1, 1,
+                 1, 1, 0, 0, 1, 1, 1,
+                 1, 1, 1, 0, 0, 1, 1,
+                 1, 1, 1, 1, 0, 0, 1,
+                 1, 1, 1, 1, 1, 0, 0), nrow = 7, byrow = TRUE)
+
+const
+
+```
+
+
+
+
+
+```{r}
+row.signs <- rep(">=", 7)
+
+# Defining the right-hand side of constraints
+row.rhs <- c(18, 27, 22, 26, 25, 21, 19)
+integer.program_cost<-lp("min",obj.f,const,row.signs,row.rhs,int.vec=1:9)
+integer.program_cost
+```
+```{r}
+# Displaying the number of workers for each shift
+
+integer.program_cost$solution#This show how many workers are corresponding to each shift on respective days
+```
+
+The weekly salary total is $25,675.
+
+
+
+These represent the total employees, along with their salaries and shift schedules, as shown below:
+```{r}
+#By using the variables from the lp model 
+Shift_table = matrix(c(0,4,5,0,8,1,0,0,0,5,0,8,1,13,2,0,0,0,8,1,13,2,4,0,0,8,1,13,2,4,5,0,0,1,13,2,3,4,0,0,0,13,2,4,5,0,8,0,0),ncol=7,byrow=TRUE)
+
+colnames(Shift_table) = c("Shift1", "Shift2", "Shift3", "Shift4", "Shift5", "Shift6", "Shift7")
+
+row.names(Shift_table) = c('Sunday', 'Monday', 'Tuesday','Wednesday','Thursday','Friday','Saturday')
+
+print(Shift_table)
+```
+
+The Shift_table below illustrates the number of available employees for each day, strategically arranged to minimize overall wage expenses.
+
+```{r}
+# Showing the sum of workers present for each day.
+rowSums(Shift_table)
+```
